@@ -6,6 +6,8 @@ import threading
 import time
 import os
 
+from openai import OpenAI
+
 from urllib.parse import urlparse
 
 def read_response(process):
@@ -122,8 +124,26 @@ def get_symbol_at_line(process, uri, line):
                 return symbol
     return None
         
-def run_client():
-   
+def review_code(file_path):
+    with open(file_path, 'r') as file:
+        file_text = file.read()
+
+    client = OpenAI()
+
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+                {"role": "system", "content": "You are a helpful assistant that reviews code."},
+                {"role": "user", "content": f"Please review the following code in Korean:\n\n{file_text}"}
+            ]
+    )
+
+    # 응답 출력
+    print("Code review response for file:", file_path)
+    print(completion.choices[0].message.content)
+    
+
+def run_client():   
     parser = argparse.ArgumentParser()
     parser.add_argument("--compile-commands-dir", type=str, help="Path to the compile_commands.json directory")
     args = parser.parse_args()
@@ -176,6 +196,8 @@ def run_client():
 
         # Shutdown the server
         send_request(process, "shutdown", {})
+
+        review_code('/Users/jaehwang/work/ai_coding/sanbox_copilot/main.c')
 
         process.stdin.close()
         process.stdout.close()
