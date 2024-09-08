@@ -1,8 +1,11 @@
 # client.py
+import argparse
 import json
 import subprocess
 import threading
 import time
+import os
+
 from urllib.parse import urlparse
 
 def read_response(process):
@@ -93,26 +96,42 @@ def open_files(process, files):
     for file in files:
         open_file(process, file)
 
-def do_main(process):
-    main_c = "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c"
-    util_c = "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/util.c"
-    
-    open_files(process, [main_c, util_c])
+# def do_main(process):
+#     main_c = "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c"
+ 
+#     # Send another request
+#     send_request(process, "textDocument/definition", {
+#         "textDocument": {"uri": main_c},
+#         "position": {"line": 19-1, "character": 15-1} # zero-based line and character
+#     })
 
-    # Wait for seconds
-    time.sleep(3)
+def get_files(comile_commands_dir):
+    compile_commands = os.path.join(comile_commands_dir, 'compile_commands.json')
+    with open(compile_commands, 'r') as f:
+        compile_commands = json.load(f)
     
-    # Send another request
-    send_request(process, "textDocument/definition", {
-        "textDocument": {"uri": main_c},
-        "position": {"line": 19-1, "character": 15-1} # zero-based line and character
-    })
-
+    files = []
+    for compile_command in compile_commands:
+        files.append('file://'+compile_command['file'])
+    
+    return files
         
 def run_client():
+   
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--compile-commands-dir", type=str, help="Path to the compile_commands.json directory")
+    args = parser.parse_args()
+
+    if args.compile_commands_dir is None:
+        # print("Please provide the compile_commands_dir")
+        parser.print_help()
+        return
+    
     with open('err.txt', 'w') as err_file:   
         process = subprocess.Popen(
-            ['clangd', '--log=verbose', '--background-index', '--clang-tidy','--completion-style=detailed'],
+            ['clangd', '--log=verbose', '--background-index', '--clang-tidy',
+                       '--completion-style=detailed',
+                       '--compile-commands-dir='+args.compile_commands_dir],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=err_file
@@ -124,8 +143,17 @@ def run_client():
             "rootUri": None,
             "capabilities": {}
         })
+        
+        open_files(process, get_files(args.compile_commands_dir))
 
-        do_main(process)
+        # Wait for seconds
+        time.sleep(1)
+
+        # Send another request
+        send_request(process, "textDocument/definition", {
+            "textDocument": {"uri": "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c"},
+            "position": {"line": 19-1, "character": 15-1} # zero-based line and character
+        })
                 
         # Shutdown the server
         send_request(process, "shutdown", {})
