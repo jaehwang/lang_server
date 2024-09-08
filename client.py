@@ -30,6 +30,7 @@ def receive_notification_and_response(process):
         response = read_response(process)
     
     print("RECV Response:", response, "\n")
+    return response
     
 
 def send_notification(process, method, params):
@@ -73,7 +74,7 @@ def send_request(process, method, params):
     process.stdin.write(request_str.encode('utf-8'))
     process.stdin.flush()
     
-    receive_notification_and_response(process)
+    return receive_notification_and_response(process)
 
 def open_file(process, uri):
     parsed_uri = urlparse(uri)
@@ -96,15 +97,6 @@ def open_files(process, files):
     for file in files:
         open_file(process, file)
 
-# def do_main(process):
-#     main_c = "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c"
- 
-#     # Send another request
-#     send_request(process, "textDocument/definition", {
-#         "textDocument": {"uri": main_c},
-#         "position": {"line": 19-1, "character": 15-1} # zero-based line and character
-#     })
-
 def get_files(comile_commands_dir):
     compile_commands = os.path.join(comile_commands_dir, 'compile_commands.json')
     with open(compile_commands, 'r') as f:
@@ -115,6 +107,20 @@ def get_files(comile_commands_dir):
         files.append('file://'+compile_command['file'])
     
     return files
+
+def get_symbol_at_line(process, uri, line):
+    # Send a textDocument/documentSymbol request
+    response = send_request(process, "textDocument/documentSymbol", {
+        "textDocument": {"uri": uri}
+    })
+
+    # Process the documentSymbol response
+    if "result" in response:
+        symbols = response["result"]
+        for symbol in symbols:
+            if symbol["location"]["range"]["start"]["line"] <= line <= symbol["location"]["range"]["end"]["line"]:
+                return symbol
+    return None
         
 def run_client():
    
@@ -154,7 +160,20 @@ def run_client():
             "textDocument": {"uri": "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c"},
             "position": {"line": 19-1, "character": 15-1} # zero-based line and character
         })
-                
+
+        send_request(process, "textDocument/references", {
+            "textDocument": {"uri": "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/util.c"},
+            "position": {"line": 68, "character": 4},  # Adjusted for 0-based indexing
+            "context": {"includeDeclaration": False}
+        })
+
+        # Get symbol at specific line
+        symbol = get_symbol_at_line(process, "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c", 18)
+        if symbol:
+            print("Symbol at line 18:", symbol)
+        else:
+            print("No symbol found at line 18.")
+
         # Shutdown the server
         send_request(process, "shutdown", {})
 
