@@ -4,15 +4,24 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import OpenAI from 'openai';
 import { marked } from 'marked';
+import { parseArgs } from "node:util";
 
 const app = express();
 const port = 3000;
 
-let fileList = [];
+const {values} = parseArgs({options: {"compile-commands-dir": {type: 'string'}}});
 
 // 현재 모듈의 URL을 파일 경로로 변환
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+let compileCommandsJSON;
+
+if ('compile-commands-dir' in values) {
+    compileCommandsJSON = path.join(values['compile-commands-dir'], 'compile_commands.json');
+} else {
+    compileCommandsJSON = path.join(__dirname, 'compile_commands.json');
+}
 
 const client = new OpenAI ({
     apiKey: process.env['OPENAI_API_KEY'],
@@ -36,8 +45,11 @@ async function getCodeReview(fileContent) {
 }
 
 // 서버 시작 시 compile_commands.json 파일 읽기
-const compileCommandsPath = path.join(__dirname, 'compile_commands.json');
-fs.readFile(compileCommandsPath, 'utf8', (err, data) => {
+
+let fileList = [];
+
+//const compileCommandsPath = path.join(__dirname, 'compile_commands.json');
+fs.readFile(compileCommandsJSON, 'utf8', (err, data) => {
     if (err) {
         console.error('Error reading compile_commands.json:', err);
         return;
