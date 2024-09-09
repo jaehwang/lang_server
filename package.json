@@ -1,0 +1,17 @@
+{
+  "name": "node-web-server",
+  "version": "1.0.0",
+  "description": "A simple Node.js web server that reads compile_commands.json and displays file contents.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "marked": "^14.1.2",
+    "openai": "^4.58.1"
+  }
+}

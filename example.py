@@ -131,7 +131,7 @@ def review_code(file_path):
     client = OpenAI()
 
     completion = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-3.5-turbo",
         messages=[
                 {"role": "system", "content": "You are a helpful assistant that reviews code."},
                 {"role": "user", "content": f"Please review the following code in Korean:\n\n{file_text}"}
@@ -141,11 +141,47 @@ def review_code(file_path):
     # 응답 출력
     print("Code review response for file:", file_path)
     print(completion.choices[0].message.content)
+
+def lsp_main(process, compile_commands_dir):
+    # Initialize the server
+    send_request(process, "initialize", {
+        "processId": None,
+        "rootUri": None,
+        "capabilities": {}
+    })
     
+    open_files(process, get_files(compile_commands_dir))
+
+    # Wait for seconds
+    time.sleep(1)
+
+    # Send another request
+    send_request(process, "textDocument/definition", {
+        "textDocument": {"uri": "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c"},
+        "position": {"line": 19-1, "character": 15-1} # zero-based line and character
+    })
+
+    send_request(process, "textDocument/references", {
+        "textDocument": {"uri": "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/util.c"},
+        "position": {"line": 68, "character": 4},  # Adjusted for 0-based indexing
+        "context": {"includeDeclaration": False}
+    })
+
+    # Get symbol at specific line
+    symbol = get_symbol_at_line(process, "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c", 18)
+    if symbol:
+        print("Symbol at line 18:", symbol)
+    else:
+        print("No symbol found at line 18.")
+
+    # Shutdown the server
+    send_request(process, "shutdown", {})    
 
 def run_client():   
     parser = argparse.ArgumentParser()
-    parser.add_argument("--compile-commands-dir", type=str, help="Path to the compile_commands.json directory")
+    parser.add_argument("--compile-commands-dir", 
+                        type=str, 
+                        help="Path to the compile_commands.json directory")
     args = parser.parse_args()
 
     if args.compile_commands_dir is None:
@@ -163,39 +199,7 @@ def run_client():
             stderr=err_file
         )
 
-        # Initialize the server
-        send_request(process, "initialize", {
-            "processId": None,
-            "rootUri": None,
-            "capabilities": {}
-        })
-        
-        open_files(process, get_files(args.compile_commands_dir))
-
-        # Wait for seconds
-        time.sleep(1)
-
-        # Send another request
-        send_request(process, "textDocument/definition", {
-            "textDocument": {"uri": "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c"},
-            "position": {"line": 19-1, "character": 15-1} # zero-based line and character
-        })
-
-        send_request(process, "textDocument/references", {
-            "textDocument": {"uri": "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/util.c"},
-            "position": {"line": 68, "character": 4},  # Adjusted for 0-based indexing
-            "context": {"includeDeclaration": False}
-        })
-
-        # Get symbol at specific line
-        symbol = get_symbol_at_line(process, "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c", 18)
-        if symbol:
-            print("Symbol at line 18:", symbol)
-        else:
-            print("No symbol found at line 18.")
-
-        # Shutdown the server
-        send_request(process, "shutdown", {})
+        lsp_main(process, args.compile_commands_dir)
 
         review_code('/Users/jaehwang/work/ai_coding/sanbox_copilot/main.c')
 
