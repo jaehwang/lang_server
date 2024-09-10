@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monaco Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs/editor/editor.main.css">
+    <style>
+        #editor {
+            width: 100%;
+            height: 90vh;
+        }
+    </style>
+</head>
+<body>
+    
+    <h1><a href="/filelist">File List for Review</a></h1>
+    <h1>File List</h1>
+    <ul id="file-list"></ul>
+    <div id="editor"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            window.editor = monaco.editor.create(document.getElementById('editor'), {
+                value: '',
+                language: 'javascript'
+            });
+        });
+
+        async function loadFileList() {
+            const response = await fetch('/files');
+            const files = await response.json();
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            files.forEach(file => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = '#';
+                a.textContent = file;
+                a.onclick = () => loadFile(file);
+                li.appendChild(a);
+                fileList.appendChild(li);
+            });
+        }
+
+        async function loadFile(filePath) {
+            const response = await fetch(`/file?path=${encodeURIComponent(filePath)}`);
+            const data = await response.text();
+            window.editor.setValue(data);
+        }
+
+        loadFileList();
+    </script>
+</body>
+</html>

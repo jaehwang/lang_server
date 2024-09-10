@@ -63,18 +63,46 @@ fs.readFile(compileCommandsJSON, 'utf8', (err, data) => {
     }
 });
 
-// / 경로로 요청이 들어오면 파일 목록을 응답으로 보내기
-app.get('/', (req, res) => {
+// /filelist 경로로 요청이 들어오면 파일 목록을 응답으로 보내기
+app.get('/filelist', (req, res) => {
     res.send(`
         <h1>File List</h1>
         <ul>
-            ${fileList.map(file => `<li><a href="/file?path=${encodeURIComponent(file)}">${file}</a></li>`).join('')}
+            ${fileList.map(file => `<li><a href="/review?path=${encodeURIComponent(file)}">${file}</a></li>`).join('')}
         </ul>
     `);
 });
 
+// 정적 파일 제공
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 파일 목록을 제공하는 API
+app.get('/files', (req, res) => {
+    res.json(fileList);
+});
+
 // /file 경로로 요청이 들어오면 파일 내용을 응답으로 보내기
 app.get('/file', async (req, res) => {
+    const filePath = req.query.path;
+
+    if (!filePath) {
+        res.status(400).send('File path is required');
+        return;
+    }
+
+    fs.readFile(filePath, 'utf8', async (err, data) => {
+        if (err) {
+            res.status(500).send(`Error reading file: ${err.message}`);
+            return;
+        }
+
+        res.set('Content-Type', 'text/plain');
+        res.send(data);
+    });
+});
+
+// /file 경로로 요청이 들어오면 파일 내용을 응답으로 보내기
+app.get('/review', async (req, res) => {
     const filePath = req.query.path;
 
     if (!filePath) {
@@ -96,7 +124,7 @@ app.get('/file', async (req, res) => {
             <pre>${data}</pre>
             <h2>Code Review:</h2>
             ${codeReviewHtml}
-            <a href="/">Back to file list</a>
+            <a href="/filelist">Back to file list</a>
         `);
     });
 });
