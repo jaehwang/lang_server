@@ -13,6 +13,21 @@ pip install openai
 
 ### 실행 방법 예
 
+clangd, compile\_commands.json 파일이 있는 디렉토리를 지정하여 코드 리뷰를 수행할 수 있습니다.
+
 ```sh
 python example.py --compile-commands-dir=/path/to/compile-commands-dir
 ```
+
+### HTTP 서버 실행
+
+```sh
+node server.js
+```
+
+http://localhost:3000/ 에 접속하여 코드 리뷰를 수행할 수 있습니다.
+
+
+<!--
+vim:nospell
+-->
