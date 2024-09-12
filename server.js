@@ -9,7 +9,8 @@ import { parseArgs } from "node:util";
 const app = express();
 const port = 3000;
 
-const {values} = parseArgs({options: {"compile-commands-dir": {type: 'string'}}});
+const {values} = parseArgs({options: 
+                            {"compile-commands-dir": {type: 'string'}}});
 
 // 현재 모듈의 URL을 파일 경로로 변환
 const __filename = fileURLToPath(import.meta.url);
@@ -18,7 +19,8 @@ const __dirname = path.dirname(__filename);
 let compileCommandsJSON;
 
 if ('compile-commands-dir' in values) {
-    compileCommandsJSON = path.join(values['compile-commands-dir'], 'compile_commands.json');
+    compileCommandsJSON = path.join(values['compile-commands-dir'], 
+                                           'compile_commands.json');
 } else {
     compileCommandsJSON = path.join(__dirname, 'compile_commands.json');
 }
@@ -48,7 +50,6 @@ async function getCodeReview(fileContent) {
 
 let fileList = [];
 
-//const compileCommandsPath = path.join(__dirname, 'compile_commands.json');
 fs.readFile(compileCommandsJSON, 'utf8', (err, data) => {
     if (err) {
         console.error('Error reading compile_commands.json:', err);
@@ -63,7 +64,7 @@ fs.readFile(compileCommandsJSON, 'utf8', (err, data) => {
     }
 });
 
-// /filelist 경로로 요청이 들어오면 파일 목록을 응답으로 보내기
+// /filelist 경로로 요청이 들어오면 Code Review할 파일 목록을 HTML 형식으로 응답으로 보내기
 app.get('/filelist', (req, res) => {
     res.send(`
         <h1>File List</h1>
@@ -76,7 +77,7 @@ app.get('/filelist', (req, res) => {
 // 정적 파일 제공
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 파일 목록을 제공하는 API
+// /files 경로로 요청이 들어오면 파일 목록을 JSON 형식으로 응답으로 보내기 
 app.get('/files', (req, res) => {
     res.json(fileList);
 });
@@ -101,7 +102,7 @@ app.get('/file', async (req, res) => {
     });
 });
 
-// /file 경로로 요청이 들어오면 파일 내용을 응답으로 보내기
+// /review 경로로 요청이 들어오면 파일 내용과 코드 리뷰를 응답으로 보내기
 app.get('/review', async (req, res) => {
     const filePath = req.query.path;
 
