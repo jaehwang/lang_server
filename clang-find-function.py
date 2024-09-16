@@ -90,6 +90,8 @@ if __name__ == '__main__':
     diffs = [{'file_path': '/Users/jaehwang/work/ai_coding/sanbox_copilot/src/main.c', 'line_numbers': [10, 42, 45]},
              {'file_path': '/Users/jaehwang/work/ai_coding/sanbox_copilot/src/util.c', 'line_numbers': [10, 35, 46]}]
 
+    index = Index.create()
+
     for diff in diffs:
         file_path = diff['file_path']
         line_numbers = diff['line_numbers']
@@ -100,7 +102,6 @@ if __name__ == '__main__':
 
         c = extract_args(cmd['command'])
 
-        index = Index.create()
         tu = index.parse(cmd['file'], c)
 
         function_list = find_functions_in_file(tu, line_numbers)
