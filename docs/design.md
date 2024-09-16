@@ -1,71 +1,67 @@
-RAG(Review and Guidance) 시스템을 구축하기 위해 코드 리뷰 프롬프트를 설정하는 것은 효과적인 피드백을 제공하는 데 매우 중요합니다. 아래는 RAG 시스템을 위한 프롬프트의 예시입니다:
+# 코드 분석
 
-### 프롬프트 구조
+* Cross reference는 clangd를 쓰자.
+* AST는 libclang을 쓰자.
 
-1. **프로젝트 설명**: 코드가 속한 프로젝트나 시스템에 대한 간단한 설명.
-2. **목표**: 코드 리뷰의 목적이나 특정 문제.
-3. **코드 스니펫**: 리뷰할 코드 블록.
-4. **리뷰 요청 사항**: 어떤 부분에 대해 집중적으로 리뷰를 원하는지 명시.
-5. **콜 그래프**: 관련된 함수 호출 구조를 제공하여 코드의 흐름을 이해할 수 있도록 함.
-
-### 예시 프롬프트
 
 ```
-### 프로젝트 설명
-이 프로젝트는 간단한 계산기를 구현하는 프로그램입니다. 사용자가 두 수를 입력하면, 사칙 연산을 수행하고 결과를 반환합니다.
-
-### 목표
-이 코드 블록에서 메모리 관리를 최적화하고, 예외 처리를 강화하는 방법에 대해 리뷰해 주세요.
-
-### 코드 스니펫
-```c
-#include <stdio.h>
-#include <stdlib.h>
-
-int add(int a, int b) {
-    return a + b;
-}
-
-int main() {
-    int *num1 = malloc(sizeof(int));
-    int *num2 = malloc(sizeof(int));
-    printf("Enter two numbers: ");
-    scanf("%d %d", num1, num2);
-    printf("Sum: %d\n", add(*num1, *num2));
-    free(num1);
-    free(num2);
-    return 0;
-}
+ B  diff A B
+ |  |   |
+ |  |  [parse and find changed functions]
+ |  |   |
+ |  |   v
+ |  |  containing functions --+
+ |  |           |             |          
+ |  |   [find callers]   [coverity, clang-tidy, ...]
+ |  |           |             |          
+ |  |           v             v          
+ |  |     call graph        defects    
+ |  |      |      |           |          
+ |  |      |  [find specs]    |          
+ |  |      |      |           |          
+ |  |      |    specs         |          
+ |  |      |      |           |          
+ v  v      v      v           v          
+ +------------+---------------+         
+              |
+              V
+[Syntheize intputs to generate prompt]
+              |
+              V
+            [LLM]
+              |
+              v
+            review
 ```
 
-### 리뷰 요청 사항
-1. 메모리 할당 및 해제 부분에서 더 나은 방법이 있는지 확인해 주세요.
-2. 사용자가 잘못된 입력을 할 경우 예외 처리를 어떻게 추가할 수 있는지 조언해 주세요.
+## parse and find changed functions
 
-### 콜 그래프
-main
-    add
-```
+수정된 Function을 찾아서 분석 대상으로 선정한다. Method도 찾아야 한다.
 
-### 설명
+Class, Type 변경은 어떻게 처리할 것인가?
 
-- **프로젝트 설명**: 코드의 맥락을 제공하여 리뷰어가 전체적인 목표를 이해하도록 돕습니다.
-- **목표**: 리뷰어가 무엇을 중점적으로 봐야 하는지 명확히 합니다.
-- **코드 스니펫**: 리뷰할 코드를 포함하여 구체적인 피드백을 요청합니다.
-- **리뷰 요청 사항**: 리뷰어가 집중해야 할 특정 부분을 지정합니다.
-- **콜 그래프**: 코드의 흐름과 호출 관계를 시각적으로 보여줍니다.
+Reference를 찾아서 Call Graph를 만들 수 있다.
 
-이와 같은 프롬프트를 사용하면 코드 리뷰 과정이 훨씬 더 효과적이고 체계적으로 진행될 수 있습니다.
+## find callers
 
+수정된 함수를 호출하는 함수를 찾아서 분석 대상으로 선정한다.
 
-### `diff` 활용
+Caller들을 찾아서 Call Graph를 만들어야 한다.
 
-ChatGPT에게 물어 보니 B를 리뷰할 때 diff A B를 주는 것이 좋다고 한다.
+## find specs
 
-```
-A를 수정해서 B를 만들었다. B는 다음과 같다.
-(B code)
-diff A B는 다음과 같다.
-(diff A B)
-B를 리뷰해 줘.
-```
+Call Graph를 구성하는 함수들의 Spec을 찾는다.
+
+함수들의 Effect를 분석해서 Spec을 만들어야 한다.
+
+SDD, Doxygen, Comment, ... 등을 고려하자.
+
+## Indirect dependency via external entity
+
+수정된 함수와 reference 외의 방식으로 의존성을 갖는 함수를 찾아야 한다.
+
+## coverity, clang-tidy, ...
+
+<!--
+vim:nospell
+-->

@@ -19,6 +19,11 @@ def find_functions_at_lines(cursor, file_path, line_numbers, result):
                 if start_line <= line_no <= end_line:
                     result[line_no] = cursor.spelling
                     line_numbers.remove(line_no)  # 처리된 라인은 제거
+        elif cursor.kind == CursorKind.CXX_METHOD:
+            for line_no in line_numbers.copy():
+                if start_line <= line_no <= end_line:
+                    result[line_no] = cursor.spelling
+                    line_numbers.remove(line_no)
 
     # 모든 자식 커서 순회
     for child in cursor.get_children():
@@ -88,7 +93,8 @@ if __name__ == '__main__':
     compile_commands = compile_commands_by_file(compile_commands_json)
 
     diffs = [{'file_path': '/Users/jaehwang/work/ai_coding/sanbox_copilot/src/main.c', 'line_numbers': [10, 42, 45]},
-             {'file_path': '/Users/jaehwang/work/ai_coding/sanbox_copilot/src/util.c', 'line_numbers': [10, 35, 46]}]
+             {'file_path': '/Users/jaehwang/work/ai_coding/sanbox_copilot/src/util.c', 'line_numbers': [10, 35, 46]},
+             {'file_path': '/Users/jaehwang/work/ai_coding/sanbox_copilot/test/test_queue.cc', 'line_numbers': [7, 20, 30]}]
 
     index = Index.create()
 
