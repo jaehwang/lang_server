@@ -47,12 +47,12 @@ def find_functions_at_lines(cursor, file_path, line_numbers, result):
             # 함수 범위 내에 있는 라인 번호에 대해 함수 이름을 기록
             for line_no in line_numbers.copy():  # set은 반복 중 제거를 위해 copy 필요
                 if start_line <= line_no <= end_line:
-                    result[line_no] = cursor.spelling
+                    result[start_line] = cursor.spelling
                     line_numbers.remove(line_no)  # 처리된 라인은 제거
         elif cursor.kind == CursorKind.CXX_METHOD:
             for line_no in line_numbers.copy():
                 if start_line <= line_no <= end_line:
-                    result[line_no] = cursor.spelling
+                    result[start_line] = cursor.spelling
                     line_numbers.remove(line_no)
 
     # 모든 자식 커서 순회

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import io
 import os
 import sys
 
 from clang.cindex import Index, Config
+from openai import OpenAI
 
 import diffutil
 import buildutil
@@ -46,24 +48,63 @@ def generate_call_graph(functions):
    
     return call_graph
 
-def generate_review_request(diffs, call_graph):
-    review_request = "다음은 수정된 파일입니다:\n"
-    for diff in diffs:
-        review_request += f"New Path: {diff.new_path}\n"
-        for hunk in diff.hunks:
-            review_request += f"New Start: {hunk.new_start}\n"
-            review_request += f"New Lines: {hunk.new_lines}\n"
+def ai_code_review(rootdir, code_diffs, functions, call_graph):
+        
+    client = OpenAI()
 
-    review_request += "다음은 함수 호출 그래프입니다:\n"
-    for function, calls in call_graph.items():
-        review_request += f"{function} 호출: {', '.join(calls) if calls else '없음'}\n"
-    return review_request
+    for diff in code_diffs:
+
+        stream = io.StringIO()
+
+        file_path = os.path.join(rootdir, diff.new_path)
+
+        stream.write(f"# {diff.new_path} 변경 사항 리뷰 요청\n")
+
+        stream.write("## 다음은 수정된 파일입니다:\n")
+
+        with open(file_path, 'r') as file:
+            code = file.read()
+            stream.write(f"```c\n{code}\n```\n")
+
+        stream.write(f"## 다음은 Unified Diff입니다:\n")
+        stream.write(f"```diff\n{diff.diff_text}\n```\n")
+
+        stream.write(f"## 다음은 수정된 함수 목록입니다:\n")
+        for file in functions:
+            for file_path, line_no, function_name in functions[diff.new_path]:
+                stream.write(f" * {function_name}, File: {file}, Line: {line_no}\n")
+
+        stream.write(f"## 다음은 함수 호출 그래프입니다:\n")
+        for function, calls in call_graph.items():
+            stream.write(f"{function} 호출: {', '.join(calls) if calls else '없음'}\n")
+
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                    {"role": "system", "content": "당신은 30년 경력의 프로그래머입니다."},
+                    {"role": "user", "content": f"{stream.getvalue()}"}
+                ]
+            )
+
+        # 응답 출력
+        print("Code review response for file:", diff.new_path)
+        print(completion.choices[0].message.content)
+
+        stream.close()
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--compile_commands", help="Path to compile_commands.json", required=True)
-    parser.add_argument("--rootdir", help="Absolute Path to project root directory", required=True)
+    parser.add_argument(
+        "--compile_commands",
+        help="Path to compile_commands.json",
+        required=True
+    )
+    parser.add_argument(
+        "--rootdir",
+        help="Absolute Path to project root directory",
+        required=True
+    )
 
     args = parser.parse_args()
  
@@ -82,11 +123,7 @@ def main():
     
     functions = find_functions(compile_commands,args.rootdir,code_files)
     call_graph = generate_call_graph(functions)
-    review_request = generate_review_request(code_diffs, call_graph)
-
-    print()
-    print("Prompt:\n") 
-    print(review_request)
+    ai_code_review(args.rootdir, code_diffs, functions, call_graph)
 
 if __name__ == "__main__":
     main()
