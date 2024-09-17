@@ -4,7 +4,6 @@ import re
 import sys
 
 # git diff -U0 ... | python diffutil.py
-# TODO: changes를 저장하지 않도록 수정
 
 class DiffFile:
     def __init__(self, old_path, new_path):
@@ -60,6 +59,46 @@ class GitDiffParser:
             i += 1
         hunk = DiffHunk(old_start, old_lines, new_start, new_lines, changes)
         return hunk, i
+
+    # def summary(self, diffs):
+    #     files = {}
+
+    #     for diff in diffs:
+    #         #print(f"New Path: {diff.new_path}")
+    #         curr_file = diff.new_path
+    #         for hunk in diff.hunks:
+    #             #print(f"New Start: {hunk.new_start}")
+    #             #print(f"New Lines: {hunk.new_lines}")
+    #             lineno = hunk.new_start
+    #             for change in hunk.changes:
+    #                 if change.startswith(("+", "-")):
+    #                     #print(f"{lineno:5}: {change}")
+    #                     if curr_file not in files:
+    #                         files[curr_file] = set()
+    #                     files[curr_file].add(lineno)
+    #                 if not change.startswith("-"):
+    #                     lineno += 1
+    #     return files
+
+def summary(diffs):
+        files = {}
+
+        for diff in diffs:
+            #print(f"New Path: {diff.new_path}")
+            curr_file = diff.new_path
+            for hunk in diff.hunks:
+                #print(f"New Start: {hunk.new_start}")
+                #print(f"New Lines: {hunk.new_lines}")
+                lineno = hunk.new_start
+                for change in hunk.changes:
+                    if change.startswith(("+", "-")):
+                        #print(f"{lineno:5}: {change}")
+                        if curr_file not in files:
+                            files[curr_file] = set()
+                        files[curr_file].add(lineno)
+                    if not change.startswith("-"):
+                        lineno += 1
+        return files
     
 # Sample test code
 if __name__ == '__main__':

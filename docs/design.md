@@ -43,6 +43,15 @@
             review
 ```
 
+### Unified diff format
+
+수정된 라인 주위의 몇 줄을 추가할 지에 따라서 리뷰 결과가 달라질 수 있다.
+기본값은 3줄이다. `-U0` 옵션을 사용하면 변경된 라인만 출력한다.
+
+### Files except source code
+
+빌드 스크립트, 문서, 리소스 파일 등은 소스 코드와 다른 방식으로 처리해야 한다.
+
 ### parse and find changed functions
 
 수정된 Function을 찾아서 분석 대상으로 선정한다. Method도 찾아야 한다.
