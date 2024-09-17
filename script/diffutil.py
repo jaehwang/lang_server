@@ -10,9 +10,12 @@ class DiffFile:
         self.old_path = old_path
         self.new_path = new_path
         self.hunks = []
+        self.diff_text = None
 
     def add_hunk(self, hunk):
         self.hunks.append(hunk)
+    def add_diff_text(self, diff_text):
+        self.diff_text = diff_text
 
 class DiffHunk:
     def __init__(self, old_start, old_lines, new_start, new_lines, changes):
@@ -34,6 +37,7 @@ class GitDiffParser:
             elif lines[i].startswith('@@'):
                 hunk, i = self.parse_hunk(lines, i)
                 files[-1].add_hunk(hunk)
+                files[-1].add_diff_text(diff_text)
             else:
                 i += 1
         return files
