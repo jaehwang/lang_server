@@ -48,49 +48,55 @@ def generate_call_graph(functions):
    
     return call_graph
 
+def generate_prompt(rootdir, diff, functions, call_graph):
+    prompt = io.StringIO()
+
+    prompt.write(f"# {diff.new_path} 코드 리뷰 요청\n")
+
+    prompt.write("## 수정된 파일 내용입니다:\n")
+
+    file_path = os.path.join(rootdir, diff.new_path)
+
+    with open(file_path, 'r') as file:
+        code = file.read()
+        prompt.write(f"```c\n{code}\n```\n")
+
+    prompt.write(f"## 변경 내용에 대한 Unified Diff입니다:\n")
+    prompt.write(f"```diff\n{diff.diff_text}\n```\n")
+
+    prompt.write(f"## 수정된 함수 목록입니다:\n")
+    for file in functions:
+        for file_path, line_no, function_name in functions[diff.new_path]:
+            prompt.write(f" * {function_name}, File: {file}, Line: {line_no}\n")
+
+    prompt.write(f"## 함수 호출 그래프입니다:\n")
+    for function, calls in call_graph.items():
+        prompt.write(f"{function} 호출: {', '.join(calls) if calls else '없음'}\n")
+
+    str = prompt.getvalue()
+    prompt.close()
+    return str
+
 def ai_code_review(rootdir, code_diffs, functions, call_graph):
         
     client = OpenAI()
 
     for diff in code_diffs:
-
-        stream = io.StringIO()
-
-        file_path = os.path.join(rootdir, diff.new_path)
-
-        stream.write(f"# {diff.new_path} 변경 사항 리뷰 요청\n")
-
-        stream.write("## 다음은 수정된 파일입니다:\n")
-
-        with open(file_path, 'r') as file:
-            code = file.read()
-            stream.write(f"```c\n{code}\n```\n")
-
-        stream.write(f"## 다음은 Unified Diff입니다:\n")
-        stream.write(f"```diff\n{diff.diff_text}\n```\n")
-
-        stream.write(f"## 다음은 수정된 함수 목록입니다:\n")
-        for file in functions:
-            for file_path, line_no, function_name in functions[diff.new_path]:
-                stream.write(f" * {function_name}, File: {file}, Line: {line_no}\n")
-
-        stream.write(f"## 다음은 함수 호출 그래프입니다:\n")
-        for function, calls in call_graph.items():
-            stream.write(f"{function} 호출: {', '.join(calls) if calls else '없음'}\n")
-
+        prompt = generate_prompt(rootdir, diff, functions, call_graph)
+        print("Prompt:\n")
+        print(prompt)
+        
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                    {"role": "system", "content": "당신은 30년 경력의 프로그래머입니다."},
-                    {"role": "user", "content": f"{stream.getvalue()}"}
+                    {"role": "system", "content": "당신은 30년 경력의 Software 프로그래머입니다."},
+                    {"role": "user", "content": f"{prompt}"}
                 ]
             )
 
         # 응답 출력
         print("Code review response for file:", diff.new_path)
         print(completion.choices[0].message.content)
-
-        stream.close()
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -109,6 +115,12 @@ def parse_arguments():
     args = parser.parse_args()
  
     if not os.path.isabs(args.rootdir):
+        print(f"Error: {args.rootdir} not absolute.", file=sys.stderr)
+        parser.print_help()
+        sys.exit(1)
+
+    if not os.path.isfile(args.compile_commands):
+        print(f"Error: {args.compile_commands} not found.", file=sys.stderr)
         parser.print_help()
         sys.exit(1)
 
@@ -120,8 +132,7 @@ def main():
     compile_commands = buildutil.compile_commands_by_file(args.compile_commands)
 
     code_diffs, code_files = get_git_diff()
-    
-    functions = find_functions(compile_commands,args.rootdir,code_files)
+    functions = find_functions(compile_commands, args.rootdir, code_files)
     call_graph = generate_call_graph(functions)
     ai_code_review(args.rootdir, code_diffs, functions, call_graph)
 
