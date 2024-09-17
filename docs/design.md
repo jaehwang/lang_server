@@ -14,7 +14,7 @@
 ## Workflow
 
 ```
- B  diff A B
+ B  diff -Naur A B
  |  |   |
  |  |  [parse and find changed functions]
  |  |   |
