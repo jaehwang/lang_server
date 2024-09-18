@@ -143,7 +143,7 @@ def review_code(file_path):
     print("Code review response for file:", file_path)
     print(completion.choices[0].message.content)
 
-def lsp_main(process, compile_commands_dir):
+def lsp_main(process, compile_commands_dir, sandbox_project_dir):
     # Initialize the server
     send_request(process, "initialize", {
         "processId": None,
@@ -156,20 +156,23 @@ def lsp_main(process, compile_commands_dir):
     # Wait for seconds
     time.sleep(1)
 
+    main_uri = 'file://'+os.path.join(sandbox_project_dir, 'src', 'main.c')
+    util_uri = 'file://'+os.path.join(sandbox_project_dir, 'src', 'util.c')
+
     # Send another request
     send_request(process, "textDocument/definition", {
-        "textDocument": {"uri": "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c"},
+        "textDocument": {"uri": main_uri},
         "position": {"line": 19-1, "character": 15-1} # zero-based line and character
     })
 
     send_request(process, "textDocument/references", {
-        "textDocument": {"uri": "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/util.c"},
+        "textDocument": {"uri": util_uri},
         "position": {"line": 68, "character": 4},  # Adjusted for 0-based indexing
         "context": {"includeDeclaration": False}
     })
 
     # Get symbol at specific line
-    symbol = get_symbol_at_line(process, "file:///Users/jaehwang/work/ai_coding/sanbox_copilot/main.c", 18)
+    symbol = get_symbol_at_line(process, main_uri, 18)
     if symbol:
         print("Symbol at line 18:", symbol)
     else:
@@ -183,13 +186,24 @@ def run_client():
     parser.add_argument("--compile-commands-dir", 
                         type=str, 
                         help="Path to the compile_commands.json directory")
+
+    parser.add_argument("--sandbox-project-dir", 
+                        type=str, 
+                        help="Path to the sandbox project directory")
+    
     args = parser.parse_args()
 
-    if args.compile_commands_dir is None:
-        # print("Please provide the compile_commands_dir")
+    if args.compile_commands_dir is None or not os.path.isdir(args.compile_commands_dir):
+        parser.print_help()
+        return
+
+    if args.sandbox_project_dir is None or not os.path.isdir(args.sandbox_project_dir):
         parser.print_help()
         return
     
+    if not os.path.isabs(args.sandbox_project_dir):
+        args.sandbox_project_dir = os.path.abspath(args.sandbox_project_dir)
+
     with open('err.txt', 'w') as err_file:   
         process = subprocess.Popen(
             ['clangd', '--log=verbose', '--background-index', '--clang-tidy',
@@ -200,9 +214,9 @@ def run_client():
             stderr=err_file
         )
 
-        lsp_main(process, args.compile_commands_dir)
+        lsp_main(process, args.compile_commands_dir, args.sandbox_project_dir)
 
-        review_code('/Users/jaehwang/work/ai_coding/sanbox_copilot/main.c')
+        review_code(os.path.join(args.sandbox_project_dir, 'src', 'main.c'))
 
         process.stdin.close()
         process.stdout.close()
