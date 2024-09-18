@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 
+import argparse
+import os
+import sys
 from clang.cindex import CursorKind, Index, CompilationDatabase, Config
 import json
 import re
+import platform
 
-Config.set_library_path('/Applications/Xcode.app/Contents/Frameworks')
+if platform.system() == 'Darwin':
+    Config.set_library_path('/Applications/Xcode.app/Contents/Frameworks')
 
 def find_functions_at_lines(cursor, file_path, line_numbers, result):
     """주어진 커서에서 해당 파일의 여러 라인 번호가 속한 함수명을 찾음"""
@@ -88,13 +93,34 @@ def extract_args(command):
     return extracted_args
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--compile-commands-dir", 
+                        type=str, 
+                        help="Path to the compile_commands.json directory")
 
-    compile_commands_json = 'compile_commands.json'
+    parser.add_argument("--sandbox-project-dir", 
+                        type=str, 
+                        help="Path to the sandbox project directory")
+    
+    args = parser.parse_args()
+
+    if args.compile_commands_dir is None or not os.path.isdir(args.compile_commands_dir):
+        parser.print_help()
+        sys.exit(1)
+
+    if args.sandbox_project_dir is None or not os.path.isdir(args.sandbox_project_dir):
+        parser.print_help()
+        sys.exit(1)
+    
+    if not os.path.isabs(args.sandbox_project_dir):
+        args.sandbox_project_dir = os.path.abspath(args.sandbox_project_dir)
+        
+    compile_commands_json = os.path.join(args.compile_commands_dir,'compile_commands.json')
     compile_commands = compile_commands_by_file(compile_commands_json)
 
-    diffs = [{'file_path': '/Users/jaehwang/work/ai_coding/sanbox_copilot/src/main.c', 'line_numbers': [10, 42, 45]},
-             {'file_path': '/Users/jaehwang/work/ai_coding/sanbox_copilot/src/util.c', 'line_numbers': [10, 35, 46]},
-             {'file_path': '/Users/jaehwang/work/ai_coding/sanbox_copilot/test/test_queue.cc', 'line_numbers': [7, 20, 30]}]
+    diffs = [{'file_path': os.path.join(args.sandbox_project_dir, 'src/main.c'), 'line_numbers': [10, 42, 45]},
+             {'file_path': os.path.join(args.sandbox_project_dir, 'src/util.c'), 'line_numbers': [10, 35, 46]},
+             {'file_path': os.path.join(args.sandbox_project_dir, 'test/test_queue.cc'), 'line_numbers': [7, 20, 30]}]
 
     index = Index.create()
 
