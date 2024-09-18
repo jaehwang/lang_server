@@ -6,6 +6,7 @@ from pprint import pprint
 from clang.cindex import CursorKind, Index, CompilationDatabase, Config
 from collections import defaultdict
 import sys
+import platform
 import json
 import yaml
 import re
@@ -23,8 +24,8 @@ callgraph
 CALLGRAPH = defaultdict(list)
 FULLNAMES = defaultdict(set)
 
-Config.set_library_path('/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib')
-#/Applications/Xcode.app/Contents//Frameworks/libclang.dylib
+if platform.system() == 'Darwin':
+    Config.set_library_path('/Applications/Xcode.app/Contents/Frameworks')
 
 def get_diag_info(diag):
     return {
