@@ -207,19 +207,11 @@ def extract_args(command):
     
     return extracted_args
 
-def keep_arg(x) -> bool:
-    keep_this = x.startswith('-I') or x.startswith('-std=') or x.startswith('-D')
-    return keep_this
-
-
 def analyze_source_files(cfg):
     print('reading source files...')
     for cmd in read_compile_commands(cfg['db']):
         index = Index.create()
-        # c = [
-        #     x for x in cmd['command'].split()
-        #     if keep_arg(x)
-        # ] + cfg['clang_args']
+
         c = extract_args(cmd['command']) + cfg['clang_args']
         print(c)
         tu = index.parse(cmd['file'], c)
