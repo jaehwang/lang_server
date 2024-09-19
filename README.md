@@ -11,6 +11,21 @@
 pip install openai
 ```
 
+Python clang package 버전은 14를 안 쓰면 `index.parse()` 후에 diagnostics에 stddef.h가 없다는 error이 나올 수 있다.
+
+### config.json 작성
+
+`script/config.sample.json`을 수정해서 config.json을 만들자.
+```json
+{
+    "libclang_dir": "/home/linuxbrew/.linuxbrew/Cellar/llvm/18.1.8/lib",
+    "python_clang_package_dir": "/home/linuxbrew/.linuxbrew/opt/llvm/lib/python3.12/site-packages"
+}
+```
+
+`pip`로 clang을 설치하지 않고 llvm에서 같이 설치된 package를 쓰고 싶다면 `python_clang_package_dir`을 지정하자.
+
+
 ### 실행 방법 예
 
 clangd, compile\_commands.json 파일이 있는 디렉토리를 지정하여 코드 리뷰를 수행할 수 있습니다.

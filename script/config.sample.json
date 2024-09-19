@@ -1,0 +1,4 @@
+{
+    "libclang_dir": "/home/linuxbrew/.linuxbrew/Cellar/llvm/18.1.8/lib",
+    "python_clang_package_dir": "/home/linuxbrew/.linuxbrew/opt/llvm/lib/python3.12/site-packages"
+}

@@ -1,16 +1,33 @@
 #!/usr/bin/env python3
 
-import argparse
+import subprocess
 import os
 import sys
-from clang.cindex import CursorKind, Index, CompilationDatabase, Config
 import json
+import argparse
 import re
 import platform
 
-if platform.system() == 'Darwin':
-    Config.set_library_path('/Applications/Xcode.app/Contents/Frameworks')
+config_path = os.path.join(os.path.dirname(__file__), 'config.json')
 
+with open(config_path, 'r') as config_file:
+    config = json.load(config_file)
+
+python_clang_package_dir = config.get('python_clang_package_dir')
+
+if python_clang_package_dir is not None:
+    sys.path.append(python_clang_package_dir)
+
+from clang.cindex import CursorKind, Index, Config
+
+libclang_dir = config.get('libclang_dir')
+
+if libclang_dir is None:
+    if platform.system() == 'Darwin':
+        Config.set_library_path('/Applications/Xcode.app/Contents/Frameworks')
+else:
+    Config.set_library_path(libclang_dir)
+    
 def find_functions_at_lines(cursor, file_path, line_numbers, result):
     """주어진 커서에서 해당 파일의 여러 라인 번호가 속한 함수명을 찾음"""
     if cursor.location.file and cursor.location.file.name == file_path:

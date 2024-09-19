@@ -2,14 +2,6 @@
 
 # https://github.com/Vermeille/clang-callgraph/tree/master
 
-from pprint import pprint
-from clang.cindex import CursorKind, Index, CompilationDatabase, Config
-from collections import defaultdict
-import sys
-import platform
-import json
-import yaml
-import re
 """
 Dumps a callgraph of a function in a codebase
 usage: callgraph.py file.cpp|compile_commands.json [-x exclude-list] [extra clang args...]
@@ -20,12 +12,37 @@ When running the python script, after parsing all the codebase, you are
 prompted to type in the function's name for which you wan to obtain the
 callgraph
 """
+from pprint import pprint
+from collections import defaultdict
+import os
+import sys
+import platform
+import json
+import yaml
+import re
+
+config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+
+with open(config_path, 'r') as config_file:
+    config = json.load(config_file)
+
+python_clang_package_dir = config.get('python_clang_package_dir')
+
+if python_clang_package_dir is not None:
+    sys.path.append(python_clang_package_dir)
+
+from clang.cindex import CursorKind, Index, Config
+
+libclang_dir = config.get('libclang_dir')
+
+if libclang_dir is None:
+    if platform.system() == 'Darwin':
+        Config.set_library_path('/Applications/Xcode.app/Contents/Frameworks')
+else:
+    Config.set_library_path(libclang_dir)
 
 CALLGRAPH = defaultdict(list)
 FULLNAMES = defaultdict(set)
-
-if platform.system() == 'Darwin':
-    Config.set_library_path('/Applications/Xcode.app/Contents/Frameworks')
 
 def get_diag_info(diag):
     return {
@@ -223,7 +240,9 @@ def analyze_source_files(cfg):
             if d.severity == d.Error or d.severity == d.Fatal:
                 print(' '.join(c))
                 pprint(('diags', list(map(get_diag_info, tu.diagnostics))))
-                return
+                # TODO: Error을 출력만 하자. Error이 있어도 동작은 하는 듯 하니.
+                # python clang package version 14가 아닌 경우 발생하는 듯.
+                #return
         show_info(tu.cursor, cfg['excluded_paths'], cfg['excluded_prefixes'])
 
 

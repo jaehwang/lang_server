@@ -1,7 +1,29 @@
 import json
 import re
+import os
+import sys
+import platform
 
-from clang.cindex import CursorKind
+config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+
+with open(config_path, 'r') as config_file:
+    config = json.load(config_file)
+
+python_clang_package_dir = config.get('python_clang_package_dir')
+
+if python_clang_package_dir is not None:
+    sys.path.append(python_clang_package_dir)
+
+from clang.cindex import CursorKind, Config
+
+libclang_dir = config.get('libclang_dir')
+
+if libclang_dir is None:
+    if platform.system() == 'Darwin':
+        Config.set_library_path('/Applications/Xcode.app/Contents/Frameworks')
+else:
+    Config.set_library_path(libclang_dir)
+
 
 def read_compile_commands(filename):
     if filename.endswith('.json'):
