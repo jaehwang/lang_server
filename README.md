@@ -23,6 +23,8 @@ Python clang package 버전은 14를 안 쓰면 `index.parse()` 후에 diagnosti
 }
 ```
 
+Mac에서는 `libclang_dir: "/Applications/Xcode.app/Contents/Frameworks"`을 지정하자.
+
 `pip`로 clang을 설치하지 않고 llvm에서 같이 설치된 package를 쓰고 싶다면 `python_clang_package_dir`을 지정하자.
 
 

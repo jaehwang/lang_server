@@ -148,7 +148,14 @@ def lsp_main(process, compile_commands_dir, sandbox_project_dir):
     send_request(process, "initialize", {
         "processId": None,
         "rootUri": None,
-        "capabilities": {}
+        "capabilities": {
+            "textDocument": {
+                "references": {
+                    "dynamicRegistration": True,
+                    "container": True  # clangd 16 or later
+                }
+            }
+         }
     })
     
     open_files(process, get_files(compile_commands_dir))

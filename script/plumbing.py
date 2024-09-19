@@ -4,14 +4,30 @@ import argparse
 import io
 import os
 import sys
+import json
+import platform
 
-from clang.cindex import Index, Config
 from openai import OpenAI
 
 import diffutil
 import buildutil
 
-Config.set_library_path('/Applications/Xcode.app/Contents/Frameworks')
+config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+
+with open(config_path, 'r') as config_file:
+    config = json.load(config_file)
+
+python_clang_package_dir = config.get('python_clang_package_dir')
+
+if python_clang_package_dir is not None:
+    sys.path.append(python_clang_package_dir)
+
+from clang.cindex import Index, Config
+
+libclang_dir = config.get('libclang_dir')
+
+if libclang_dir is not None:
+    Config.set_library_path(libclang_dir)
 
 def get_git_diff():
     diff_text = sys.stdin.read()
@@ -102,7 +118,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--compile_commands",
+        "--compile-commands",
         help="Path to compile_commands.json",
         required=True
     )
