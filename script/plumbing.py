@@ -130,10 +130,18 @@ def parse_arguments():
 
     args = parser.parse_args()
  
-    if not os.path.isabs(args.rootdir):
-        print(f"Error: {args.rootdir} not absolute.", file=sys.stderr)
+    #if not os.path.isabs(args.rootdir):
+    #    print(f"Error: {args.rootdir} not absolute.", file=sys.stderr)
+    #    parser.print_help()
+    #    sys.exit(1)
+
+    if not os.path.exists(args.rootdir):
+        print(f"Error: {args.rootdir} not found.", file=sys.stderr)
         parser.print_help()
         sys.exit(1)
+
+    if not os.path.isabs(args.rootdir):
+        args.rootdir = os.path.abspath(args.rootdir)
 
     if not os.path.isfile(args.compile_commands):
         print(f"Error: {args.compile_commands} not found.", file=sys.stderr)

@@ -18,10 +18,7 @@ from clang.cindex import CursorKind, Config
 
 libclang_dir = config.get('libclang_dir')
 
-if libclang_dir is None:
-    if platform.system() == 'Darwin':
-        Config.set_library_path('/Applications/Xcode.app/Contents/Frameworks')
-else:
+if libclang_dir is not None:
     Config.set_library_path(libclang_dir)
 
 
