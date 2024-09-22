@@ -11,7 +11,7 @@ from git import Repo
 from openai import OpenAI
 
 import diffutil
-import buildutil
+import buildutil as bu
 
 config_path = os.path.join(os.path.dirname(__file__), 'config.json')
 
@@ -47,8 +47,6 @@ def git_diff(repo, commit1, commit2):
     return str
 
 def get_git_diff(repo, commit1, commit2):
-    #diff_text = sys.stdin.read()
-
     diff_text = git_diff(repo, commit1, commit2)
 
     parser = diffutil.GitDiffParser()
@@ -58,19 +56,19 @@ def get_git_diff(repo, commit1, commit2):
     # 빌드 관련 파일, 문서, 리소스 파일, 소스 코드 등으로 분리 가능.
     code_diffs = [diff for diff in diffs if diff.new_path.endswith((".c", ".cpp"))]
 
-    return (code_diffs, diffutil.summary(code_diffs))
+    return (code_diffs, diffutil.changed_line_numbers(code_diffs))
 
-def find_functions(compile_commands, rootdir, code_diffs):
+def find_functions(compile_commands, rootdir, changd_lines):
     functions = {}
     index = Index.create()
-    for file in code_diffs.keys():
+    for file in changd_lines.keys():
         file_path = os.path.join(rootdir, file)
 
         cmd = compile_commands[file_path]
-        c = buildutil.extract_args(cmd['command'])
+        c = bu.extract_args(cmd['command'])
 
         tu = index.parse(cmd['file'], c)
-        function_list = buildutil.find_functions_in_file(tu, file_path, code_diffs[file])
+        function_list = bu.find_functions_in_file(tu, file_path, changd_lines[file])
         functions[file] = function_list
 
     return functions
@@ -175,13 +173,13 @@ def parse_arguments():
 def main():
     args = parse_arguments()
     
-    compile_commands = buildutil.compile_commands_by_file(args.compile_commands)
+    compile_commands = bu.compile_commands_by_file(args.compile_commands)
 
     repo = Repo(args.rootdir)
 
-    code_diffs, code_files = get_git_diff(repo, args.commit1, args.commit2)
+    code_diffs, changed_lines = get_git_diff(repo, args.commit1, args.commit2)
 
-    functions = find_functions(compile_commands, args.rootdir, code_files)
+    functions = find_functions(compile_commands, args.rootdir, changed_lines)
     call_graph = generate_call_graph(functions)
     ai_code_review(repo, args.commit2, code_diffs, functions, call_graph)
 

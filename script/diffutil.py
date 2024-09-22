@@ -64,19 +64,16 @@ class GitDiffParser:
         hunk = DiffHunk(old_start, old_lines, new_start, new_lines, changes)
         return hunk, i
 
-def summary(diffs):
+# Returns a dictionary of files and line numbers that have changes
+def changed_line_numbers(diffs):
         files = {}
 
         for diff in diffs:
-            #print(f"New Path: {diff.new_path}")
             curr_file = diff.new_path
             for hunk in diff.hunks:
-                #print(f"New Start: {hunk.new_start}")
-                #print(f"New Lines: {hunk.new_lines}")
                 lineno = hunk.new_start
                 for change in hunk.changes:
                     if change.startswith(("+", "-")):
-                        #print(f"{lineno:5}: {change}")
                         if curr_file not in files:
                             files[curr_file] = set()
                         files[curr_file].add(lineno)
