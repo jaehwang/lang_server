@@ -86,6 +86,10 @@ def find_functions(compile_commands, rootdir, changd_lines):
     return functions
 
 def generate_call_graph(functions):
+    """
+    Generate a call graph from the functions that have changed.
+    Not yet implemented.
+    """
     call_graph = {}
     for file in functions:
         for file_path, line_no, function_name in functions[file]:
