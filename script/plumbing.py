@@ -41,7 +41,8 @@ def git_diff(repo, commit1, commit2):
         commit2 (str): The SHA or reference of the second commit.
 
     Returns:
-        str: A string representing the diff between the two commits in unified diff format.
+        str: A string representing the diff between the two commits in
+             unified diff format.
     """
     commit = repo.commit(commit1)
     diffs = commit.diff(commit2, create_patch=True)
@@ -66,7 +67,10 @@ def get_git_diff(repo, commit1, commit2):
 
     # TODO: C/C++ 파일과 나머지 파일의 처리를 분리해야 함.
     # 빌드 관련 파일, 문서, 리소스 파일, 소스 코드 등으로 분리 가능.
-    code_diffs = [diff for diff in diffs if diff.new_path.endswith((".c", ".cpp"))]
+    code_diffs = [
+        diff for diff in diffs 
+        if diff.new_path.endswith((".c", ".cpp"))
+    ]
 
     return (code_diffs, diffutil.changed_line_numbers(code_diffs))
 
@@ -80,7 +84,9 @@ def find_functions(compile_commands, rootdir, changd_lines):
         c = bu.extract_args(cmd['command'])
 
         tu = index.parse(cmd['file'], c)
-        function_list = bu.find_functions_in_file(tu, file_path, changd_lines[file])
+        function_list = bu.find_functions_in_file(
+            tu, file_path, changd_lines[file]
+        )
         functions[file] = function_list
 
     return functions
@@ -93,7 +99,9 @@ def generate_call_graph(functions):
     call_graph = {}
     for file in functions:
         for file_path, line_no, function_name in functions[file]:
-            print(f"Changed Function: {function_name}, File: {file}, Line: {line_no}")
+            print(f"Changed Function: %s, File: %s, Line: %s" % 
+                  (function_name, file, line_no))
+                  
    
     return call_graph
 
@@ -112,11 +120,13 @@ def generate_prompt(repo, commit, diff, functions, call_graph):
     prompt.write(f"## 수정된 함수 목록입니다:\n")
     for file in functions:
         for file_path, line_no, function_name in functions[diff.new_path]:
-            prompt.write(f" * {function_name}, File: {file}, Line: {line_no}\n")
+            prompt.write(f" * %s, File: %s, Line: %s\n" % 
+                          (function_name, file, line_no))
 
     prompt.write(f"## 함수 호출 그래프입니다:\n")
     for function, calls in call_graph.items():
-        prompt.write(f"{function} 호출: {', '.join(calls) if calls else '없음'}\n")
+        prompt.write(f"%s 호출: %s\n" % 
+                     (function, ', '.join(calls) if calls else '없음'))
 
     str = prompt.getvalue()
     prompt.close()
@@ -134,7 +144,8 @@ def ai_code_review(repo, commit, code_diffs, functions, call_graph):
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                    {"role": "system", "content": "당신은 30년 경력의 Software 프로그래머입니다."},
+                    {"role": "system", 
+                     "content": "당신은 30년 경력의 Software 프로그래머입니다."},
                     {"role": "user", "content": f"{prompt}"}
                 ]
             )
