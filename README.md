@@ -30,10 +30,10 @@ Mac에서는 `libclang_dir: "/Applications/Xcode.app/Contents/Frameworks"`을 �
 
 ### 실행 방법 예
 
-clangd, compile\_commands.json 파일이 있는 디렉토리를 지정하여 코드 리뷰를 수행할 수 있습니다.
+Git 저장소의 두 commit 사이의 코드 리뷰를 수행하려면 다음과 같이 실행하십시오:
 
 ```sh
-python example.py --compile-commands-dir=/path/to/compile-commands-dir
+python script/plumbing.py --compile-commands ../sanbox_copilot/build/compile_commands.json --rootdir ../sanbox_copilot/ --commit1 8aee~1 --commit2 8aee
 ```
 
 ### HTTP 서버 실행
