@@ -36,7 +36,7 @@ Git 저장소의 두 commit 사이의 코드 리뷰를 수행하려면 다음과
 python script/plumbing.py --compile-commands ../sanbox_copilot/build/compile_commands.json --rootdir ../sanbox_copilot/ --commit1 8aee~1 --commit2 8aee
 ```
 
-## HTTP를 통해 clangd 사용하는 Example
+## HTTP를 통해 Code Review 하는 예
 
 ```sh
 node server.js --compile-commands-dir ../sanbox_copilot/build
