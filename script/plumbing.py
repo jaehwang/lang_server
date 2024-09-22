@@ -5,7 +5,6 @@ import io
 import os
 import sys
 import json
-import platform
 
 from git import Repo
 from openai import OpenAI
