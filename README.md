@@ -8,7 +8,7 @@
 ### 의존성 설치
 프로젝트를 실행하기 전에 필요한 의존성을 설치해야 합니다:
 ```sh
-pip install openai
+pip install -r requirements.txt
 ```
 
 Python clang package 버전은 14를 안 쓰면 `index.parse()` 후에 diagnostics에 stddef.h가 없다는 error이 나올 수 있다.
@@ -36,10 +36,10 @@ Git 저장소의 두 commit 사이의 코드 리뷰를 수행하려면 다음과
 python script/plumbing.py --compile-commands ../sanbox_copilot/build/compile_commands.json --rootdir ../sanbox_copilot/ --commit1 8aee~1 --commit2 8aee
 ```
 
-### HTTP 서버 실행
+## HTTP를 통해 clangd 사용하는 Example
 
 ```sh
-node server.js
+node server.js --compile-commands-dir ../sanbox_copilot/build
 ```
 
 http://localhost:3000/ 에 접속하여 코드 리뷰를 수행할 수 있습니다.

@@ -12,6 +12,7 @@ from openai import OpenAI
 import diffutil
 import buildutil as bu
 
+# --- Begin of configuration ---
 config_path = os.path.join(os.path.dirname(__file__), 'config.json')
 
 with open(config_path, 'r') as config_file:
@@ -28,8 +29,20 @@ libclang_dir = config.get('libclang_dir')
 
 if libclang_dir is not None:
     Config.set_library_path(libclang_dir)
+# --- End of configuration ---
 
 def git_diff(repo, commit1, commit2):
+    """
+    Generate a diff between two commits in a git repository.
+
+    Args:
+        repo (git.Repo): The git repository object.
+        commit1 (str): The SHA or reference of the first commit.
+        commit2 (str): The SHA or reference of the second commit.
+
+    Returns:
+        str: A string representing the diff between the two commits in unified diff format.
+    """
     commit = repo.commit(commit1)
     diffs = commit.diff(commit2, create_patch=True)
 
