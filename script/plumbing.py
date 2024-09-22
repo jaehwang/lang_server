@@ -7,6 +7,7 @@ import sys
 import json
 import platform
 
+from git import Repo
 from openai import OpenAI
 
 import diffutil
@@ -29,8 +30,26 @@ libclang_dir = config.get('libclang_dir')
 if libclang_dir is not None:
     Config.set_library_path(libclang_dir)
 
-def get_git_diff():
-    diff_text = sys.stdin.read()
+def git_diff(repo, commit1, commit2):
+    commit = repo.commit(commit1)
+    diffs = commit.diff(commit2, create_patch=True)
+
+    txt = io.StringIO()
+
+    for diff in diffs:
+        txt.write('diff --git a/'+diff.a_path+' b/'+diff.b_path+"\n")
+        txt.write('--- a/'+diff.a_path+"\n")
+        txt.write('+++ b/'+diff.b_path+"\n")
+        txt.write(diff.diff.decode('utf-8'))
+
+    str = txt.getvalue()
+    txt.close()
+    return str
+
+def get_git_diff(repo, commit1, commit2):
+    #diff_text = sys.stdin.read()
+
+    diff_text = git_diff(repo, commit1, commit2)
 
     parser = diffutil.GitDiffParser()
     diffs = parser.parse(diff_text)
@@ -64,18 +83,14 @@ def generate_call_graph(functions):
    
     return call_graph
 
-def generate_prompt(rootdir, diff, functions, call_graph):
+def generate_prompt(repo, commit, diff, functions, call_graph):
     prompt = io.StringIO()
 
     prompt.write(f"# {diff.new_path} 코드 리뷰 요청\n")
 
     prompt.write("## 수정된 파일 내용입니다:\n")
 
-    file_path = os.path.join(rootdir, diff.new_path)
-
-    with open(file_path, 'r') as file:
-        code = file.read()
-        prompt.write(f"```c\n{code}\n```\n")
+    prompt.write(repo.git.show(commit+":"+diff.new_path)+"\n")
 
     prompt.write(f"## 변경 내용에 대한 Unified Diff입니다:\n")
     prompt.write(f"```diff\n{diff.diff_text}\n```\n")
@@ -93,12 +108,12 @@ def generate_prompt(rootdir, diff, functions, call_graph):
     prompt.close()
     return str
 
-def ai_code_review(rootdir, code_diffs, functions, call_graph):
+def ai_code_review(repo, commit, code_diffs, functions, call_graph):
         
     client = OpenAI()
 
     for diff in code_diffs:
-        prompt = generate_prompt(rootdir, diff, functions, call_graph)
+        prompt = generate_prompt(repo, commit, diff, functions, call_graph)
         print("Prompt:\n")
         print(prompt)
         
@@ -128,13 +143,20 @@ def parse_arguments():
         required=True
     )
 
+    parser.add_argument(
+        "--commit1",
+        help="Commit ID 1",
+        required=True
+    )
+
+    parser.add_argument(
+        "--commit2",
+        help="Commit ID 2",
+        required=True
+    )
+
     args = parser.parse_args()
  
-    #if not os.path.isabs(args.rootdir):
-    #    print(f"Error: {args.rootdir} not absolute.", file=sys.stderr)
-    #    parser.print_help()
-    #    sys.exit(1)
-
     if not os.path.exists(args.rootdir):
         print(f"Error: {args.rootdir} not found.", file=sys.stderr)
         parser.print_help()
@@ -155,10 +177,13 @@ def main():
     
     compile_commands = buildutil.compile_commands_by_file(args.compile_commands)
 
-    code_diffs, code_files = get_git_diff()
+    repo = Repo(args.rootdir)
+
+    code_diffs, code_files = get_git_diff(repo, args.commit1, args.commit2)
+
     functions = find_functions(compile_commands, args.rootdir, code_files)
     call_graph = generate_call_graph(functions)
-    ai_code_review(args.rootdir, code_diffs, functions, call_graph)
+    ai_code_review(repo, args.commit2, code_diffs, functions, call_graph)
 
 if __name__ == "__main__":
     main()
