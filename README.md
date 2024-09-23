@@ -39,8 +39,8 @@ Git 저장소의 두 commit 사이의 코드 리뷰를 수행하려면 다음과
 
 ```sh
 python script/plumbing.py \
---compile-commands ../sanbox_copilot/build/compile_commands.json \
---rootdir ../sanbox_copilot/ \
+--compile-commands ../sandbox_copilot/build/compile_commands.json \
+--rootdir ../sandbox_copilot/ \
 --commit1 8aee~1 \
 --commit2 8aee
 ```
