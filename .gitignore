@@ -5,3 +5,4 @@ package-lock.json
 .cache/
 compile_commands.json
 script/config.json
+script/__pycache__
