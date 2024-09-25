@@ -13,6 +13,7 @@
 
 ## Workflow
 
+파일 A를 수정해서 B가 되었다고 하자.
 ```
  B  diff -Naur A B
  |  |   |
@@ -20,18 +21,18 @@
  |  |   |
  |  |   v
  |  |  containing functions --+
- |  |           |             |          
+ |  |           |             |
  |  |   [find callers]   [coverity, clang-tidy, ...]
- |  |           |             |          
- |  |           v             v          
- |  |     call graph        defects    
- |  |      |      |           |          
- |  |      |  [find specs]    |          
- |  |      |      |           |          
- |  |      |    specs         |          
- |  |      |      |           |          
- v  v      v      v           v          
- +------------+---------------+         
+ |  |           |             |
+ |  |           v             v
+ |  |     call graph        defects
+ |  |      |      |           |
+ |  |      |  [find specs]    |
+ |  |      |      |           |
+ |  |      |    specs         |
+ |  |      |      |           |
+ v  v      v      v           v
+ +------------+---------------+
               |
               V
 [Syntheize intputs to generate prompt]
