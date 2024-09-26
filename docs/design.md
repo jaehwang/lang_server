@@ -22,16 +22,16 @@
  |  |   v
  |  |  containing functions --+
  |  |           |             |
- |  |   [find callers]   [coverity, clang-tidy, ...]
+ |  |   [find dependents]   [coverity, clang-tidy, ...]
  |  |           |             |
  |  |           v             v
- |  |     call graph        defects
- |  |      |      |           |
- |  |      |  [find specs]    |
- |  |      |      |           |
- |  |      |    specs         |
- |  |      |      |           |
- v  v      v      v           v
+ |  |      functions        defects
+ |  |             |           |
+ |  |         [find specs]    |
+ |  |             |           |
+ |  |           specs         |
+ |  |             |           |
+ v  v             v           v
  +------------+---------------+
               |
               V
@@ -61,11 +61,9 @@ Class, Type 변경은 어떻게 처리할 것인가?
 
 Reference를 찾아서 Call Graph를 만들 수 있다.
 
-### find callers
+### dependents via external entities
 
-수정된 함수를 호출하는 함수를 찾아서 분석 대상으로 선정한다.
-
-Caller들을 찾아서 Call Graph를 만들어야 한다.
+System resource(file, partitition 등)을 통해 간접적인 의존성을 갖는 함수를 찾다.
 
 ### find specs
 

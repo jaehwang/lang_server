@@ -91,21 +91,20 @@ def find_functions(compile_commands, rootdir, changd_lines):
 
     return functions
 
-def generate_call_graph(functions):
+def find_dependents(functions):
     """
-    Generate a call graph from the functions that have changed.
-    Not yet implemented.
+    System resource 등을 통한 간접적인 의존성을 갖는 함수를 찾자.
     """
-    call_graph = {}
+    dependents = {}
     for file in functions:
         for file_path, line_no, function_name in functions[file]:
             print(f"Changed Function: %s, File: %s, Line: %s" % 
                   (function_name, file, line_no))
                   
    
-    return call_graph
+    return dependents
 
-def generate_prompt(repo, commit, diff, functions, call_graph):
+def generate_prompt(repo, commit, diff, functions, dependents):
     prompt = io.StringIO()
 
     prompt.write(f"# {diff.new_path} 코드 리뷰 요청\n")
@@ -123,8 +122,8 @@ def generate_prompt(repo, commit, diff, functions, call_graph):
             prompt.write(f" * %s, File: %s, Line: %s\n" % 
                           (function_name, file, line_no))
 
-    prompt.write(f"## 함수 호출 그래프입니다:\n")
-    for function, calls in call_graph.items():
+    prompt.write(f"## Indirect Dependents:\n")
+    for function, calls in dependents.items():
         prompt.write(f"%s 호출: %s\n" % 
                      (function, ', '.join(calls) if calls else '없음'))
 
@@ -132,12 +131,12 @@ def generate_prompt(repo, commit, diff, functions, call_graph):
     prompt.close()
     return str
 
-def ai_code_review(repo, commit, code_diffs, functions, call_graph):
+def ai_code_review(repo, commit, code_diffs, functions, dependents):
         
     client = OpenAI()
 
     for diff in code_diffs:
-        prompt = generate_prompt(repo, commit, diff, functions, call_graph)
+        prompt = generate_prompt(repo, commit, diff, functions, dependents)
         print("Prompt:\n")
         print(prompt)
         
@@ -207,8 +206,8 @@ def main():
     code_diffs, changed_lines = get_git_diff(repo, args.commit1, args.commit2)
 
     functions = find_functions(compile_commands, args.rootdir, changed_lines)
-    call_graph = generate_call_graph(functions)
-    ai_code_review(repo, args.commit2, code_diffs, functions, call_graph)
+    dependents = find_dependents(functions)
+    ai_code_review(repo, args.commit2, code_diffs, functions, dependents)
 
 if __name__ == "__main__":
     main()
